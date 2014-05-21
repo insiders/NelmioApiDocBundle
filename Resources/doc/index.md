@@ -198,6 +198,55 @@ class YourController
 * `views`: the view(s) under which this resource will be shown. Leave empty to
   specify the default view. Either a single view, or an array of views.
 
+* `responseBody`: example of response body from this endpoint. This properties can be a string value or array with
+ `file` key and path value to example with the response; Examples:
+
+``` php
+<?php
+
+class YourController
+{
+    /**
+     * @ApiDoc(
+     *  description="Create a new Object",
+     *  responseBody="
+     {
+          "uniqueid": "1234test",
+          "name": "Test Resource"
+     }
+        "
+     * )
+     */
+    public function myFunction()
+    {
+        // ...
+    }
+}
+```
+
+``` php
+<?php
+
+class YourController
+{
+    /**
+     * @ApiDoc(
+     *  description="Create a new Object",
+     *  responseBody = {
+     *      "file"="..\src\Company\YourBundle\Resources\doc\sample\responseBodyExample.json"
+     *  }
+     * )
+     */
+    public function myFunction()
+    {
+        // ...
+    }
+}
+```
+
+* `requestBody`: example of request body to this endpoint. Similar as `responseBody` this properties can be a
+ string value or array with `file` key and path value to example with the response. See examples above.
+
 Each _filter_ has to define a `name` parameter, but other parameters are free. Filters are often optional
 parameters, and you can document them as you want, but keep in mind to be consistent for the whole documentation.
 
