@@ -59,6 +59,12 @@
             <call method="setDefaultSectionsOpened">
                 <argument>%nelmio_api_doc.default_sections_opened%</argument>
             </call>
+            <call method="setApiVersions">
+                <argument>%nelmio_api_doc.sandbox.api_version.versions%</argument>
+            </call>
+            <call method="setDefaultApiVersion">
+                <argument>%nelmio_api_doc.sandbox.api_version.default_version%</argument>
+            </call>
         </service>
         <service id="nelmio_api_doc.formatter.swagger_formatter" class="%nelmio_api_doc.formatter.swagger_formatter.class%"
             parent="nelmio_api_doc.formatter.abstract_formatter" />

@@ -81,6 +81,16 @@ class HtmlFormatter extends AbstractFormatter
     private $defaultSectionsOpened;
 
     /**
+     * @var array
+     */
+    private $apiVersions;
+
+    /**
+     * @var string
+     */
+    private $defaultApiVersion;
+
+    /**
      * @param array $authentication
      */
     public function setAuthentication(array $authentication = null)
@@ -193,6 +203,22 @@ class HtmlFormatter extends AbstractFormatter
     }
 
     /**
+     * @param array $apiVersions
+     */
+    public function setApiVersions(array $apiVersions)
+    {
+        $this->apiVersions = $apiVersions;
+    }
+
+    /**
+     * @param string $defaultApiVersion
+     */
+    public function setDefaultApiVersion($defaultApiVersion)
+    {
+        $this->defaultApiVersion = $defaultApiVersion;
+    }
+
+    /**
      * {@inheritdoc}
      */
     protected function renderOne(array $data)
@@ -240,6 +266,8 @@ class HtmlFormatter extends AbstractFormatter
             'js'                    => file_get_contents(__DIR__ . '/../Resources/public/js/all.js'),
             'motdTemplate'          => $this->motdTemplate,
             'defaultSectionsOpened' => $this->defaultSectionsOpened,
+            'apiVersions'           => $this->apiVersions,
+            'defaultApiVersion'     => $this->defaultApiVersion,
         );
     }
 }

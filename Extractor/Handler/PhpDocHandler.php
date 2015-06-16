@@ -97,6 +97,11 @@ class PhpDocHandler implements HandlerInterface
                         $requirements[$var]['requirement'] = '';
                     }
 
+                    $default = $route->getDefault($var);
+                    if (!isset($requirements[$var]['default']) && $default !== null) {
+                        $requirements[$var]['default'] = $default;
+                    }
+
                     $found = true;
                     break;
                 }

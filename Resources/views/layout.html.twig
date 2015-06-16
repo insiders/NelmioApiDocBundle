@@ -17,6 +17,14 @@
             <a href="{{ path('nelmio_api_doc_index') }}"><h1>{{ apiName }}</h1></a>
             {% if enableSandbox %}
                 <div id="sandbox_configuration">
+                    {% if apiVersions|length > 0 %}
+                    api version:
+                    <select id="api_version">
+                    {% for value in apiVersions %}
+                        <option value="{{ value }}"{{ defaultApiVersion == value ? ' selected' : '' }}>{{ value }}</option>
+                    {% endfor %}
+                    </select>
+                    {% endif %}
                     {% if bodyFormats|length > 0 %}
                     body format:
                     <select id="body_format">
@@ -38,6 +46,7 @@
                             api password: <input type="text" id="api_pass" value=""/>
                         {% elseif authentication.delivery in ['query', 'http', 'header'] %}
                             api key: <input type="text" id="api_key" value=""/>
+                            access token: <input type="text" id="access_token" value=""/>
                         {% endif %}
 
                         {% if authentication.custom_endpoint %}
@@ -149,7 +158,7 @@
 
             {% if enableSandbox %}
                 var getStoredValue, storeValue, deleteStoredValue;
-                var apiAuthKeys = ['api_key', 'api_login', 'api_pass', 'api_endpoint'];
+                var apiAuthKeys = ['api_key', 'api_login', 'api_pass', 'api_endpoint', 'access_token'];
 
                 if ('localStorage' in window) {
                     var buildKey = function (key) {
@@ -505,7 +514,11 @@
                     var api_key_val = $('#api_key').val();
                     if (authentication_delivery == 'query' && api_key_val.length>0) {
                         url += url.indexOf('?') > 0 ? '&' : '?';
-                        url += api_key_parameter + '=' + api_key_val;
+                        if ($('#access_token').val() != '') {
+                            url += 'access_token=' + $('#access_token').val();
+                        } else {
+                            url += api_key_parameter + '=' + api_key_val;
+                        }
                     }
 
                     // prepare the api enpoint
