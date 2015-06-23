@@ -45,8 +45,8 @@
                             api login: <input type="text" id="api_login" value=""/>
                             api password: <input type="text" id="api_pass" value=""/>
                         {% elseif authentication.delivery in ['query', 'http', 'header'] %}
-                            api key: <input type="text" id="api_key" value=""/>
-                            access token: <input type="text" id="access_token" value=""/>
+                            <span {% if defaultApiVersion != 1.0 %} style="display: none;" {% endif %}>api key: <input type="text" id="api_key" value=""/></span>
+                            <span {% if defaultApiVersion < 1.1 %} style="display: none;" {% endif %}>access token: <input type="text" id="access_token" value=""/></span>
                         {% endif %}
 
                         {% if authentication.custom_endpoint %}
@@ -305,6 +305,25 @@
                     });
                 });
 
+                $('#api_version').change(function(event) {
+                    var strVersion = $(this).val();
+                    var version = parseFloat(strVersion);
+
+                    switch(version){
+                        case 1.0:
+                            $('#access_token').parent().hide();
+                            $('#api_key').parent().show();
+                            break;
+                        case 1.1:
+                            $('#access_token').parent().show();
+                            $('#api_key').parent().hide();
+                            break;
+                        default:
+                            return;
+                            break;
+                    }
+                });
+
                 $('.tabs li').click(function() {
                     var contentGroup = $(this).parents('.content');
 
@@ -478,9 +497,6 @@
                     });
 
 
-
-
-
                     // retrieve the additional headers to send
                     $('.headers .tuple', $(this)).each(function() {
                         var key, value;
@@ -501,6 +517,11 @@
                             delete params[key];
                         }
                     };
+
+                    //Replace version with global one
+                    if(url.indexOf('{version}') !== -1){
+                        url = url.replace('{version}', $('#api_version').val());
+                    }
 
                     // merge additional params back to real params object
                     if (!$.isEmptyObject(doubledParams)) {

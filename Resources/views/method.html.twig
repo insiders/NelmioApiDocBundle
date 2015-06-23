@@ -229,7 +229,7 @@
                                 <legend>Input</legend>
                                 {% if data.requirements is defined %}
                                     <h4>Requirements</h4>
-                                    {% for name, infos in data.requirements %}
+                                    {% for name, infos in data.requirements if name != 'version' %}
                                         <p class="tuple">
                                             <input type="text" class="key" value="{{ name }}" placeholder="Key" />
                                             <span>=</span>
