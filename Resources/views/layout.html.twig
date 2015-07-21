@@ -749,7 +749,9 @@
                         ? search.substr(api_key_start)
                         : search.substring(api_key_start, api_key_end);
 
-                    $('#api_key').val(api_key);
+                    $(window).load(function() {
+                        $('#api_key').val(api_key);
+                    });
                 }
                 {% elseif authentication and authentication.delivery == 'header' %}
                 var authentication_delivery = '{{ authentication.delivery }}';
