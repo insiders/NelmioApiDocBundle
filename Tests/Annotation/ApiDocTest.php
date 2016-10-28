@@ -13,6 +13,7 @@ namespace Nelmio\ApiDocBundle\Tests\Annotation;
 
 use Nelmio\ApiDocBundle\Annotation\ApiDoc;
 use Nelmio\ApiDocBundle\Tests\TestCase;
+use Symfony\Component\Routing\Route;
 
 class ApiDocTest extends TestCase
 {
@@ -33,6 +34,7 @@ class ApiDocTest extends TestCase
         $this->assertFalse(isset($array['parameters']));
         $this->assertNull($annot->getInput());
         $this->assertFalse($array['authentication']);
+        $this->assertFalse(isset($array['headers']));
         $this->assertTrue(is_array($array['authenticationRoles']));
     }
 
@@ -180,27 +182,6 @@ class ApiDocTest extends TestCase
         $annot = new ApiDoc($data);
     }
 
-    public function testConstructNoFiltersIfFormTypeDefined()
-    {
-        $data = array(
-            'resource'      => true,
-            'description'   => 'Heya',
-            'input'         => 'My\Form\Type',
-            'filters'       => array(
-                array('name' => 'a-filter'),
-            ),
-        );
-
-        $annot = new ApiDoc($data);
-        $array = $annot->toArray();
-
-        $this->assertTrue(is_array($array));
-        $this->assertFalse(isset($array['filters']));
-        $this->assertTrue($annot->isResource());
-        $this->assertEquals($data['description'], $array['description']);
-        $this->assertEquals($data['input'], $annot->getInput());
-    }
-
     public function testConstructWithStatusCodes()
     {
         $data = array(
@@ -288,6 +269,28 @@ class ApiDocTest extends TestCase
         $this->assertTrue(is_array($array));
         $this->assertTrue(isset($array['parameters']['fooId']));
         $this->assertTrue(isset($array['parameters']['fooId']['dataType']));
+    }
+
+    public function testConstructWithHeaders()
+    {
+        $data = array(
+            'headers' => array(
+                array(
+                    'name' => 'headerName',
+                    'description' => 'Some description'
+                )
+            )
+        );
+
+        $annot = new ApiDoc($data);
+        $array = $annot->toArray();
+
+        $this->assertArrayHasKey('headerName', $array['headers']);
+        $this->assertNotEmpty($array['headers']['headerName']);
+
+        $keys = array_keys($array['headers']);
+        $this->assertEquals($data['headers'][0]['name'], $keys[0]);
+        $this->assertEquals($data['headers'][0]['description'], $array['headers']['headerName']['description']);
     }
 
     public function testConstructWithOneTag()
@@ -391,14 +394,14 @@ class ApiDocTest extends TestCase
 
     public function testConstructWithRequestAndResponseBodyAsFile()
     {
-        $data = array(
-            'requestBody' => array(
+        $data = [
+            'requestBody' => [
                 'file' => __DIR__ . '/../Fixtures/Resources/doc/exampleBody.json',
-            ),
-            'responseBody' => array(
+            ],
+            'responseBody' => [
                 'file' => __DIR__ . '/../Fixtures/Resources/doc/exampleBody.json'
-            ),
-        );
+            ],
+        ];
 
         $annot = new ApiDoc($data);
         $array = $annot->toArray();
@@ -406,5 +409,29 @@ class ApiDocTest extends TestCase
         $this->assertTrue(is_array($array));
         $this->assertTrue(!empty($array['requestBodyExample']));
         $this->assertTrue(!empty($array['responseBodyExample']));
+    }
+
+    public function testSetRoute()
+    {
+        $route = new Route(
+            '/path/{foo}',
+            [
+                'foo' => 'bar',
+                'nested' => [
+                    'key1' => 'value1',
+                    'key2' => 'value2',
+                ]
+            ],
+            [],
+            [],
+            '{foo}.awesome_host.com'
+        );
+
+        $apiDoc = new ApiDoc([]);
+        $apiDoc->setRoute($route);
+
+        $this->assertSame($route, $apiDoc->getRoute());
+        $this->assertEquals('bar.awesome_host.com', $apiDoc->getHost());
+        $this->assertEquals('ANY', $apiDoc->getMethod());
     }
 }

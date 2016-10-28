@@ -47,7 +47,7 @@ class DumpCommand extends ContainerAwareCommand
 
         $routeCollection = $this->getContainer()->get('router')->getRouteCollection();
 
-        if (!$input->hasOption('format') || in_array($format, array('json'))) {
+        if ($format == 'json') {
             $formatter = $this->getContainer()->get('nelmio_api_doc.formatter.simple_formatter');
         } else {
             if (!in_array($format, $this->availableFormats)) {
@@ -61,7 +61,7 @@ class DumpCommand extends ContainerAwareCommand
             $formatter->setEnableSandbox(false);
         }
 
-        if ('html' === $format) {
+        if ('html' === $format && method_exists($this->getContainer(), 'enterScope')) {
             $this->getContainer()->enterScope('request');
             $this->getContainer()->set('request', new Request(), 'request');
         }
@@ -72,7 +72,7 @@ class DumpCommand extends ContainerAwareCommand
         if ('json' === $format) {
             $output->writeln(json_encode($formattedDoc));
         } else {
-            $output->writeln($formattedDoc);
+            $output->writeln($formattedDoc, OutputInterface::OUTPUT_RAW);
         }
     }
 }

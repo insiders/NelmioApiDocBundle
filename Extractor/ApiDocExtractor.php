@@ -122,7 +122,7 @@ class ApiDocExtractor
             }
 
             if ($method = $this->getReflectionMethod($route->getDefault('_controller'))) {
-                $annotation = $this->reader->getMethodAnnotation($method, self::ANNOTATION_CLASS);
+                $annotation = $this->reader->getMethodAnnotation($method, static::ANNOTATION_CLASS);
                 if (
                     $annotation && !in_array($annotation->getSection(), $excludeSections) &&
                     (in_array($view, $annotation->getViews()) || (0 === count($annotation->getViews()) && $view === ApiDoc::DEFAULT_VIEW))
@@ -132,7 +132,7 @@ class ApiDocExtractor
                             $resources[] = $resource;
                         } else {
                             // remove format from routes used for resource grouping
-                            $resources[] = str_replace('.{_format}', '', $route->getPattern());
+                            $resources[] = str_replace('.{_format}', '', $route->getPath());
                         }
                     }
 
@@ -151,10 +151,10 @@ class ApiDocExtractor
         rsort($resources);
         foreach ($array as $index => $element) {
             $hasResource = false;
-            $pattern     = $element['annotation']->getRoute()->getPattern();
+            $path        = $element['annotation']->getRoute()->getPath();
 
             foreach ($resources as $resource) {
-                if (0 === strpos($pattern, $resource) || $resource === $element['annotation']->getResource()) {
+                if (0 === strpos($path, $resource) || $resource === $element['annotation']->getResource()) {
                     $array[$index]['resource'] = $resource;
 
                     $hasResource = true;
@@ -170,14 +170,14 @@ class ApiDocExtractor
         $methodOrder = array('GET', 'POST', 'PUT', 'DELETE');
         usort($array, function ($a, $b) use ($methodOrder) {
             if ($a['resource'] === $b['resource']) {
-                if ($a['annotation']->getRoute()->getPattern() === $b['annotation']->getRoute()->getPattern()) {
-                    $methodA = array_search($a['annotation']->getRoute()->getRequirement('_method'), $methodOrder);
-                    $methodB = array_search($b['annotation']->getRoute()->getRequirement('_method'), $methodOrder);
+                if ($a['annotation']->getRoute()->getPath() === $b['annotation']->getRoute()->getPath()) {
+                    $methodA = array_search($a['annotation']->getRoute()->getMethods(), $methodOrder);
+                    $methodB = array_search($b['annotation']->getRoute()->getMethods(), $methodOrder);
 
                     if ($methodA === $methodB) {
                         return strcmp(
-                            $a['annotation']->getRoute()->getRequirement('_method'),
-                            $b['annotation']->getRoute()->getRequirement('_method')
+                            implode('|', $a['annotation']->getRoute()->getMethods()),
+                            implode('|', $b['annotation']->getRoute()->getMethods())
                         );
                     }
 
@@ -185,8 +185,8 @@ class ApiDocExtractor
                 }
 
                 return strcmp(
-                    $a['annotation']->getRoute()->getPattern(),
-                    $b['annotation']->getRoute()->getPattern()
+                    $a['annotation']->getRoute()->getPath(),
+                    $b['annotation']->getRoute()->getPath()
                 );
             }
 
@@ -211,14 +211,27 @@ class ApiDocExtractor
         if (preg_match('#(.+)::([\w]+)#', $controller, $matches)) {
             $class = $matches[1];
             $method = $matches[2];
-        } elseif (preg_match('#(.+):([\w]+)#', $controller, $matches)) {
-            $controller = $matches[1];
-            $method = $matches[2];
+        } else {
+            if (preg_match('#(.+):([\w]+)#', $controller, $matches)) {
+                $controller = $matches[1];
+                $method = $matches[2];
+            }
+
             if ($this->container->has($controller)) {
-                $this->container->enterScope('request');
-                $this->container->set('request', new Request(), 'request');
+                // BC SF < 3.0
+                if (method_exists($this->container, 'enterScope')) {
+                    $this->container->enterScope('request');
+                    $this->container->set('request', new Request(), 'request');
+                }
                 $class = ClassUtils::getRealClass(get_class($this->container->get($controller)));
-                $this->container->leaveScope('request');
+                // BC SF < 3.0
+                if (method_exists($this->container, 'enterScope')) {
+                    $this->container->leaveScope('request');
+                }
+
+                if (!isset($method) && method_exists($class, '__invoke')) {
+                    $method = '__invoke';
+                }
             }
         }
 
@@ -242,7 +255,7 @@ class ApiDocExtractor
     public function get($controller, $route)
     {
         if ($method = $this->getReflectionMethod($controller)) {
-            if ($annotation = $this->reader->getMethodAnnotation($method, self::ANNOTATION_CLASS)) {
+            if ($annotation = $this->reader->getMethodAnnotation($method, static::ANNOTATION_CLASS)) {
                 if ($route = $this->router->getRouteCollection()->get($route)) {
                     return $this->extractData($annotation, $route, $method);
                 }
@@ -309,13 +322,15 @@ class ApiDocExtractor
             $parameters = $this->clearClasses($parameters);
             $parameters = $this->generateHumanReadableTypes($parameters);
 
-            if ('PUT' === $annotation->getMethod()) {
-                // All parameters are optional with PUT (update)
+            if ('PATCH' === $annotation->getMethod()) {
+                // All parameters are optional with PATCH (update)
                 array_walk($parameters, function ($val, $key) use (&$parameters) {
                     $parameters[$key]['required'] = false;
                 });
             }
 
+            // merge parameters with parameters block from ApiDoc annotation in controller method
+            $parameters = $this->mergeParameters($parameters, $annotation->getParameters());
             $annotation->setParameters($parameters);
         }
 
@@ -476,7 +491,11 @@ class ApiDocExtractor
                                 $v1[$name] = $value;
                             }
                         } elseif ($name == 'default') {
-                            $v1[$name] = $value ?: $v1[$name];
+                            if (isset($v1[$name])) {
+                                $v1[$name] = isset($value) ? $value : $v1[$name];
+                            } else {
+                                $v1[$name] = isset($value) ? $value : null;
+                            }
                         } else {
                             $v1[$name] = $value;
                         }
@@ -534,7 +553,7 @@ class ApiDocExtractor
     {
         foreach ($array as $name => $info) {
 
-            if (empty($info['dataType'])) {
+            if (empty($info['dataType']) && isset($info['subType'])) {
                 $array[$name]['dataType'] = $this->generateHumanReadableType($info['actualType'], $info['subType']);
             }
 
