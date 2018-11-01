@@ -288,6 +288,8 @@ class ApiDocExtractor
         // create a new annotation
         $annotation = clone $annotation;
 
+        $annotation->setProjectDir($this->container->getParameter('kernel.project_dir'));
+
         // doc
         $annotation->setDocumentation($this->commentExtractor->getDocCommentText($method));
 

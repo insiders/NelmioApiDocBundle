@@ -180,6 +180,10 @@ class ApiDoc
      */
     private $responseBodyExample;
 
+    private $requestBody;
+    private $responseBody;
+    private $projectDir;
+
     public function __construct(array $data)
     {
         $this->resource = !empty($data['resource']) ? $data['resource'] : false;
@@ -323,11 +327,11 @@ class ApiDoc
         }
 
         if (isset($data['requestBody'])) {
-            $this->requestBodyExample = $this->addRequestBodyExample($data['requestBody']);
+            $this->requestBody = $data['requestBody'];
         }
 
         if (isset($data['responseBody'])) {
-            $this->responseBodyExample = $this->addResponseBodyExample($data['responseBody']);
+            $this->responseBody = $data['responseBody'];
         }
     }
 
@@ -790,12 +794,12 @@ class ApiDoc
             $data['resourceDescription'] = $resourceDescription;
         }
 
-        if ($requestBodyExample = $this->requestBodyExample) {
-            $data['requestBodyExample'] = $requestBodyExample;
+        if ($requestBody = $this->requestBody) {
+            $data['requestBodyExample'] = $this->addRequestBodyExample($requestBody);
         }
 
-        if ($responseBodyExample = $this->responseBodyExample) {
-            $data['responseBodyExample'] = $responseBodyExample;
+        if ($responseBody = $this->responseBody) {
+            $data['responseBodyExample'] = $this->addRequestBodyExample($responseBody);
         }
 
         $data['https'] = $this->https;
@@ -856,8 +860,11 @@ class ApiDoc
      */
     private function exampleBodyFromArray($body)
     {
-        if (!empty($body['file']) && is_readable($body['file'])) {
-            return file_get_contents($body['file']);
+        if (!empty($body['file'])) {
+            $file = $this->projectDir . '/' . $body['file'];
+            if (\is_readable($file)) {
+                return file_get_contents($file);
+            }
         }
 
         return '';
@@ -871,5 +878,10 @@ class ApiDoc
     private function markdownBlockCodeFormater($code)
     {
         return !empty($code) ? "```\n" . $code . "\n```" : "";
+    }
+
+    public function setProjectDir($projectDir)
+    {
+        $this->projectDir = $projectDir;
     }
 }
