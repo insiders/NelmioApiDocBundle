@@ -74,6 +74,12 @@
         <service id="nelmio_api_doc.parser.json_serializable_parser" class="%nelmio_api_doc.parser.json_serializable_parser.class%">
             <tag name="nelmio_api_doc.extractor.parser" priority="1" />
         </service>
+
+        <service id="Nelmio\ApiDocBundle\Controller\ApiDocController" class="Nelmio\ApiDocBundle\Controller\ApiDocController" public="true">
+            <argument type="service" id="nelmio_api_doc.extractor.api_doc_extractor" />
+            <argument type="service" id="nelmio_api_doc.formatter.html_formatter" />
+            <argument type="service" id="nelmio_api_doc.formatter.swagger_formatter" />
+        </service>
     </services>
 
 </container>

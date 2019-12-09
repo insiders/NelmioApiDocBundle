@@ -264,12 +264,14 @@
                                 <legend>Input</legend>
                                 {% if data.requirements is defined %}
                                     <h4>Requirements</h4>
-                                    {% for name, infos in data.requirements if name != 'version' %}
+                                    {% for name, infos in data.requirements %}
+                                    {% if name != 'version' %}
                                         <p class="tuple">
                                             <input type="text" class="key" value="{{ name }}" placeholder="Key" />
                                             <span>=</span>
                                             <input type="text" class="value" placeholder="{% if infos.description is defined %}{{ infos.description }}{% else %}Value{% endif %}" {% if infos.default is defined %} value="{{ infos.default }}" {% endif %}/> <span class="remove">-</span>
                                         </p>
+                                    {% endif %}
                                     {% endfor %}
                                 {% endif %}
                                 {% if data.filters is defined %}
